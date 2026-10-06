@@ -30,7 +30,7 @@ function parseFecha(v){
   if(!v) return null; const s=String(v); let y,m,d,a;
   if((a=s.match(/^(\d{4})-(\d{2})-(\d{2})/))){y=+a[1];m=+a[2];d=+a[3];}
   else if((a=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))){d=+a[1];m=+a[2];y=+a[3];}
-  else return null;
+  else { const t=new Date(typeof v==='number'?v:s); if(isNaN(t)) return null; y=t.getFullYear();m=t.getMonth()+1;d=t.getDate(); }
   if(m<1||m>12||d<1||d>31) return null;
   const p=n=>String(n).padStart(2,'0');
   return {y,m,d,ym:`${y}-${p(m)}`,iso:`${y}-${p(m)}-${p(d)}`,label:`${p(d)}/${p(m)}/${y}`};
@@ -193,7 +193,6 @@ function Dashboard(){
   const byCat=groupSum(cur,'cat'), byWho=groupSum(cur,'who'), multi=whos.length>1;
   const mt=monthTotals(base);
   const top=[...cur].sort((a,b)=>b.amount-a.amount).slice(0,5);
-  const dayRows=series.filter(x=>x.day!=null), maxDay=dayRows.reduce((m,x)=>x.day>(m?.day??-1)?x:m,null);
   const avgDay=days?total/days:0;
   const SEM={green:'Vas bien',yellow:'Atención',red:'Gasto acelerado',none:'Sin referencia todavía'};
   const semMsg=!sem?'':sem.level==='none'?'Cuando haya al menos un mes anterior con datos, acá vas a ver si tu ritmo de gasto es normal.':
@@ -209,6 +208,7 @@ function Dashboard(){
     }
   }
 
+  const dayRows=series.filter(x=>x.day!=null), maxDay=dayRows.reduce((m,x)=>x.day>(m?.day??-1)?x:m,null);
   const table=cur.filter(r=>!q||`${r.detalle} ${r.cat} ${r.who} ${r.ciclo}`.toLowerCase().includes(q.toLowerCase()))
     .sort((x,y)=>sort.dir*(sort.k==='amount'?x.amount-y.amount:(x.fecha?.iso||'').localeCompare(y.fecha?.iso||'')));
   const pages=Math.max(1,Math.ceil(table.length/PAGE)), pg=Math.min(page,pages-1);
